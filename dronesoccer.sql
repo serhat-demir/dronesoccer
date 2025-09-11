@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 31 Tem 2025, 13:06:09
+-- Üretim Zamanı: 11 Eyl 2025, 20:40:28
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -39,7 +39,13 @@ CREATE TABLE `gruplar` (
 
 INSERT INTO `gruplar` (`id`, `grup_adi`, `kullanici_id`) VALUES
 (6, 'Grup A', 1),
-(7, 'Grup B', 1);
+(7, 'Grup B', 1),
+(10, 'A', 8),
+(11, 'B', 8),
+(12, 'C', 8),
+(14, 'D', 8),
+(15, 'Lise', 16),
+(16, 'Ortaokul', 16);
 
 -- --------------------------------------------------------
 
@@ -63,7 +69,10 @@ CREATE TABLE `kullanicilar` (
 --
 
 INSERT INTO `kullanicilar` (`id`, `kullanici_adi`, `sifre`, `is_admin`, `kurum`, `telefon`, `is_approved`, `created_at`) VALUES
-(1, 'admin', '$2y$10$7MhfCU6QypkgCvLlOTP6GO1bpAscYdKvz/f5TEgQ.AOSl2akNGxr6', 2, NULL, NULL, 1, '2025-07-29 11:34:19');
+(1, 'admin', '$2y$10$7MhfCU6QypkgCvLlOTP6GO1bpAscYdKvz/f5TEgQ.AOSl2akNGxr6', 1, NULL, NULL, 1, '2025-07-29 11:34:19'),
+(6, 'spadmin', '$2y$10$8D.lx4RXnFkIOUosZSNPDOPJP2Y0qwRmWLRGRQ32gMmEyAN/L1bau', 2, NULL, NULL, 1, '2025-07-29 11:47:31'),
+(8, 'test', '$2y$10$X7HHDvdu5ICIzy2DmjKIeO6paE.ggTGlzNz.TXF/xejw.rYy6QAiC', 0, 'Kurum C', '5553334455', 1, '2025-07-29 12:03:21'),
+(16, 'FinalFour', '$2y$10$TvlXObXw7diluQK3fvZHXe.KDqb2PvaYWICFWiY92QaWTg7765RVS', 0, NULL, NULL, 1, '2025-09-11 18:09:00');
 
 -- --------------------------------------------------------
 
@@ -82,7 +91,7 @@ CREATE TABLE `scoreboard` (
   `takim2_pen` int(3) NOT NULL,
   `takim2_puan` int(1) NOT NULL,
   `kazanan_takim_id` int(11) NOT NULL,
-  `asama` enum('Ön Eleme','Çeyrek Final','Yarı Final','3-4 Maçı','Final') NOT NULL DEFAULT 'Ön Eleme',
+  `asama` enum('Ön Eleme','Çeyrek Final','Yarı Final','3-4 Maçı','Final','Final Four') NOT NULL DEFAULT 'Ön Eleme',
   `kullanici_id` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -136,7 +145,30 @@ INSERT INTO `scoreboard` (`id`, `takim1_id`, `takim1_gol`, `takim1_pen`, `takim1
 (332, 38, 12, 1, 3, 39, 7, 0, 0, 38, '3-4 Maçı', 1),
 (333, 35, 7, 2, 0, 44, 10, 1, 3, 44, 'Final', 1),
 (334, 35, 10, 4, 3, 44, 9, 2, 0, 35, 'Final', 1),
-(335, 35, 10, 0, 3, 44, 4, 2, 0, 35, 'Final', 1);
+(335, 35, 10, 0, 3, 44, 4, 2, 0, 35, 'Final', 1),
+(339, 54, 13, 2, 0, 55, 12, 5, 3, 55, 'Ön Eleme', 8),
+(340, 54, 6, 2, 3, 56, 3, 1, 0, 54, 'Ön Eleme', 8),
+(341, 55, 5, 1, 0, 56, 9, 7, 3, 56, 'Ön Eleme', 8),
+(342, 57, 5, 7, 0, 58, 8, 5, 3, 58, 'Ön Eleme', 8),
+(343, 57, 4, 7, 3, 59, 5, 3, 0, 57, 'Ön Eleme', 8),
+(344, 57, 11, 2, 0, 68, 12, 5, 3, 68, 'Ön Eleme', 8),
+(345, 58, 1, 0, 0, 59, 7, 0, 3, 59, 'Ön Eleme', 8),
+(346, 58, 5, 4, 3, 68, 0, 0, 0, 58, 'Ön Eleme', 8),
+(347, 59, 6, 0, 0, 68, 4, 7, 3, 68, 'Ön Eleme', 8),
+(348, 60, 5, 0, 0, 61, 2, 4, 3, 61, 'Ön Eleme', 8),
+(349, 60, 5, 4, 3, 62, 2, 4, 0, 60, 'Ön Eleme', 8),
+(350, 60, 21, 5, 3, 67, 12, 3, 0, 60, 'Ön Eleme', 8),
+(351, 61, 1, 0, 0, 62, 4, 0, 3, 62, 'Ön Eleme', 8),
+(352, 61, 4, 4, 3, 67, 5, 1, 0, 61, 'Ön Eleme', 8),
+(353, 62, 12, 1, 0, 67, 21, 5, 3, 67, 'Ön Eleme', 8),
+(354, 63, 4, 4, 0, 64, 7, 2, 3, 64, 'Ön Eleme', 8),
+(355, 63, 4, 3, 0, 65, 22, 4, 3, 65, 'Ön Eleme', 8),
+(356, 63, 5, 2, 0, 66, 8, 4, 3, 66, 'Ön Eleme', 8),
+(357, 64, 4, 5, 1, 65, 5, 4, 1, 0, 'Ön Eleme', 8),
+(358, 64, 7, 2, 1, 66, 4, 5, 1, 0, 'Ön Eleme', 8),
+(359, 65, 1, 2, 0, 66, 1, 5, 3, 66, 'Ön Eleme', 8),
+(366, 69, 3, 2, 3, 71, 2, 1, 0, 69, 'Final Four', 16),
+(368, 70, 5, 1, 0, 72, 6, 1, 3, 72, 'Final Four', 16);
 
 -- --------------------------------------------------------
 
@@ -168,7 +200,26 @@ INSERT INTO `takimlar` (`id`, `takim_adi`, `takim_grup`, `kullanici_id`) VALUES
 (42, 'ROBISTIM DRONE TEAM B', 7, 1),
 (43, 'HÜRGENÇ B', 7, 1),
 (44, 'ERAWINGS', 7, 1),
-(45, 'AEROERA', 7, 1);
+(45, 'AEROERA', 7, 1),
+(54, 'T1', 10, 8),
+(55, 'T2', 10, 8),
+(56, 'T3', 10, 8),
+(57, 'T4', 11, 8),
+(58, 'T5', 11, 8),
+(59, 'T6', 11, 8),
+(60, 'T7', 12, 8),
+(61, 'T8', 12, 8),
+(62, 'T9', 12, 8),
+(63, 'T10', 14, 8),
+(64, 'T11', 14, 8),
+(65, 'T12', 14, 8),
+(66, 'T13', 14, 8),
+(67, 'T14', 12, 8),
+(68, 'T15', 11, 8),
+(69, 'T1', 15, 16),
+(70, 'T2', 16, 16),
+(71, 'T3', 15, 16),
+(72, 'T4', 16, 16);
 
 --
 -- Tetikleyiciler `takimlar`
@@ -218,25 +269,25 @@ ALTER TABLE `takimlar`
 -- Tablo için AUTO_INCREMENT değeri `gruplar`
 --
 ALTER TABLE `gruplar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `kullanicilar`
 --
 ALTER TABLE `kullanicilar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `scoreboard`
 --
 ALTER TABLE `scoreboard`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=339;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=369;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `takimlar`
 --
 ALTER TABLE `takimlar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- Dökümü yapılmış tablolar için kısıtlamalar

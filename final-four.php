@@ -6,7 +6,6 @@
     session_start();
 
     if (!isset($_SESSION['user_id'])) {
-        // Redirect to login page if the user is not authenticated
         header('Location: login.php');
         exit;
     }
@@ -29,41 +28,19 @@
         ";
     }
 
-    function createQuarterFinalMatches($gruplar_rankings) {
+    function createFinalFourMatches($gruplar_rankings) {
         $group_count = count($gruplar_rankings);
         $matches = [];
 
+        // Final Four only works with exactly 2 groups and 2 teams each
         if ($group_count == 2) {
-            // 2 groups: A1-B4, A2-B3, A3-B2, A4-B1
-            if (count($gruplar_rankings[0]) >= 4 && count($gruplar_rankings[1]) >= 4) {
+            if (count($gruplar_rankings[0]) >= 2 && count($gruplar_rankings[1]) >= 2) {
                 $matches = [
-                    ['red' => $gruplar_rankings[0][0], 'blue' => $gruplar_rankings[1][3]],
-                    ['red' => $gruplar_rankings[0][1], 'blue' => $gruplar_rankings[1][2]],
-                    ['red' => $gruplar_rankings[0][2], 'blue' => $gruplar_rankings[1][1]],
-                    ['red' => $gruplar_rankings[0][3], 'blue' => $gruplar_rankings[1][0]],
-                ];
-            }
-        } elseif ($group_count == 4) {
-            // 4 groups: A1-C2, A2-C1, B1-D2, B2-D1
-            // Check if all groups have at least 2 teams
-            $valid = true;
-            foreach ($gruplar_rankings as $group) {
-                if (count($group) < 2) {
-                    $valid = false;
-                    break;
-                }
-            }
-            
-            if ($valid) {
-                $matches = [
-                    ['red' => $gruplar_rankings[0][0], 'blue' => $gruplar_rankings[2][1]], // A1 vs C2
-                    ['red' => $gruplar_rankings[0][1], 'blue' => $gruplar_rankings[2][0]], // A2 vs C1
-                    ['red' => $gruplar_rankings[1][0], 'blue' => $gruplar_rankings[3][1]], // B1 vs D2
-                    ['red' => $gruplar_rankings[1][1], 'blue' => $gruplar_rankings[3][0]], // B2 vs D1
+                    ['red' => $gruplar_rankings[0][0], 'blue' => $gruplar_rankings[1][1]], // G1T1 vs G2T2
+                    ['red' => $gruplar_rankings[0][1], 'blue' => $gruplar_rankings[1][0]], // G1T2 vs G2T1
                 ];
             }
         }
-        // Remove the 6+ groups support
 
         return $matches;
     }
@@ -74,7 +51,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drone Soccer Türkiye - Eleme Maçı Eşleştirme</title>
+    <title>Drone Soccer Türkiye - Final Four</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <style>
         .match-table th, .match-table td {
@@ -163,7 +140,7 @@
                 FROM takimlar t
                 LEFT JOIN scoreboard s 
                     ON (s.takim1_id = t.id OR s.takim2_id = t.id)
-                    AND s.asama = 'Ön Eleme'
+                    AND s.asama = 'Final Four'
                     AND s.kullanici_id = ?
                 WHERE t.takim_grup = ? AND t.kullanici_id = ?
                 GROUP BY t.id, t.takim_adi
@@ -175,47 +152,26 @@
             $gruplar_rankings[] = $grup_siralama;
         }
 
-        // Create quarter-final matches based on group count
-        $cf_matches = createQuarterFinalMatches($gruplar_rankings);
+        // Create Final Four matches
+        $ff_matches = createFinalFourMatches($gruplar_rankings);
         $group_count = count($gruplar_rankings);
 
         // Check for unsupported group counts
-        if ($group_count != 2 && $group_count != 4) {
+        if ($group_count != 2) {
             echo '<div class="alert alert-danger">';
             echo '<strong>Desteklenmeyen Grup Sayısı!</strong><br>';
-            echo "Bu sistem sadece 2 grup veya 4 grup formatını desteklemektedir.<br>";
+            echo "Final Four sistemi sadece 2 grup formatını desteklemektedir.<br>";
             echo "Mevcut grup sayınız: <strong>{$group_count}</strong><br>";
-            echo "Lütfen grup sayınızı 2 veya 4 olacak şekilde düzenleyiniz.";
+            echo "Lütfen grup sayınızı 2 olacak şekilde düzenleyiniz.";
             echo '</div>';
-            $cf_matches = []; // Clear matches to prevent further processing
-        } elseif (empty($cf_matches)) {
-            if ($group_count == 2) {
-                echo '<div class="alert alert-warning">Çeyrek final için yeterli takım bulunamadı. Her grupta en az 4 takım olmalı.</div>';
-            } elseif ($group_count == 4) {
-                echo '<div class="alert alert-warning">Çeyrek final için yeterli takım bulunamadı. Her grupta en az 2 takım olmalı.</div>';
-            }
+            $ff_matches = [];
+        } elseif (empty($ff_matches)) {
+            echo '<div class="alert alert-warning">Final Four için yeterli takım bulunamadı. Her grupta en az 2 takım olmalı.</div>';
         }
 
-        // Initialize $semi_final with a default value
-        $semi_final = [];
-
-        // Display tournament information
-        // if (!empty($cf_matches) && !isset($_POST['advance_to_semi_final']) && !isset($_POST['advance_to_final']) && !isset($_POST['show_final_winner'])) {
-        //     echo "<div class='alert alert-info mb-3'>";
-        //     echo "<strong>Turnuva Formatı:</strong> {$group_count} Grup - ";
-        //     if ($group_count == 2) {
-        //         echo "Her gruptan 4 takım (Toplam 8 takım)";
-        //     } elseif ($group_count == 4) {
-        //         echo "Her gruptan 2 takım (Toplam 8 takım)";
-        //     } else {
-        //         echo "Toplam " . count($cf_matches) * 2 . " takım";
-        //     }
-        //     echo "</div>";
-        // }
-
-        // Only proceed if we have valid quarter final matches
-        if (!empty($cf_matches) && !isset($_POST['advance_to_semi_final']) && !isset($_POST['advance_to_final']) && !isset($_POST['show_final_winner'])) {
-            renderTitle("Çeyrek Final Eşleşmeleri");
+        // Only proceed if we have valid Final Four matches
+        if (!empty($ff_matches) && !isset($_POST['advance_to_final']) && !isset($_POST['show_final_winner'])) {
+            renderTitle("Final Four Eşleşmeleri");
             echo "<form method='post' action=''>";
 
             echo "<table class='table table-bordered match-table'>
@@ -230,7 +186,7 @@
                     <tbody>";
 
             $i = 1;
-            foreach ($cf_matches as $match) {
+            foreach ($ff_matches as $match) {
                 $red_team = $match['red']['takim_adi'];
                 $blue_team = $match['blue']['takim_adi'];
 
@@ -258,124 +214,39 @@
 
             echo "</tbody></table>";
 
-            // Yarı Finale Geç butonu
             echo "
                 <div class='btn-group mb-2 mt-0'>
-                    <button type='submit' class='btn btn-primary' name='advance_to_semi_final'>Yarı Finale Geç</button>
+                    <button type='submit' class='btn btn-primary' name='advance_to_final'>Finale Geç</button>
                 </div>
             ";
 
             echo "</form>";
         }
 
-        // Yarı finale geçme işlemi
-        if (isset($_POST['advance_to_semi_final'])) {
+        // Finale geçme işlemi
+        if (isset($_POST['advance_to_final'])) {
             $winners = [];
+            $all_teams = [];
             
-            // Çeyrek final kazananlarını al
-            for ($i = 1; $i <= count($cf_matches); $i++) {
+            // Final Four kazananlarını ve tüm takımları al
+            for ($i = 1; $i <= count($ff_matches); $i++) {
                 if (isset($_POST["winner$i"])) {
                     $winners[] = $_POST["winner$i"];
                 }
             }
 
-            // Yarı final eşleşmelerini oluştur
-            if (count($winners) == 4) {
-                // Yarı final eşleşmeleri
-                $semi_final = [
-                    'SF1' => [$winners[0], $winners[2]],  // Maç 1 kazananı vs Maç 3 kazananı
-                    'SF2' => [$winners[1], $winners[3]],  // Maç 2 kazananı vs Maç 4 kazananı
-                ];
-
-                renderTitle("Yarı Final Eşleşmeleri");
-                echo "<form method='post' action=''>";
-
-                echo "<table class='table table-bordered match-table'>
-                        <thead>
-                            <tr>
-                                <th>Maç</th>
-                                <th>Kırmızı Takım</th>
-                                <th>Mavi Takım</th>
-                                <th>Kazanan</th>
-                            </tr>
-                        </thead>
-                        <tbody>";
-
-                $j = 1;
-                foreach ($semi_final as $match_key => $teams) {
-                    $red_team = $teams[0];
-                    $blue_team = $teams[1];
-
-                    echo "<tr>
-                            <td class='font-weight-bold'>$j</td>
-                            <td>{$red_team}</td>
-                            <td>{$blue_team}</td>
-                            <td>
-                                <div class='form-check winner-radio'>
-                                    <input class='form-check-input' type='radio' name='winner_sf$j' value='{$red_team}' id='winner_sf{$j}_red' required>
-                                    <label class='form-check-label' for='winner_sf{$j}_red'>
-                                        {$red_team}
-                                    </label>
-                                </div>
-                                <div class='form-check winner-radio'>
-                                    <input class='form-check-input' type='radio' name='winner_sf$j' value='{$blue_team}' id='winner_sf{$j}_blue' required>
-                                    <label class='form-check-label' for='winner_sf{$j}_blue'>
-                                        {$blue_team}
-                                    </label>
-                                </div>
-                            </td>
-                        </tr>";
-                    $j++;
-                }
-
-                echo "</tbody></table>";
-
-                // Winners listesini hidden input olarak ekle
-                foreach ($winners as $index => $winner) {
-                    echo "<input type='hidden' name='winners[]' value='{$winner}'>";
-                }
-
-                // Finale Geç butonu
-                echo "
-                    <div class='btn-group mb-2 mt-0'>
-                        <button type='submit' class='btn btn-primary' name='advance_to_final'>Finale Geç</button>
-                    </div>
-                ";
-
-                echo "</form>";
-            }
-        } 
-
-        // Finale geçme işlemi
-        if (isset($_POST['advance_to_final'])) {
-            $final_winners = [];
-            
-            // Yarı final kazananlarını al
-            for ($i = 1; $i <= 2; $i++) {
-                if (isset($_POST["winner_sf$i"])) {
-                    $final_winners[] = $_POST["winner_sf$i"];
-                }
+            // Tüm takımları topla
+            foreach ($ff_matches as $match) {
+                $all_teams[] = $match['red']['takim_adi'];
+                $all_teams[] = $match['blue']['takim_adi'];
             }
 
-            // Yarı finalde yarışan herkesi konsola yaz
-            for ($i = 0; $i < count($_POST['winners']); $i++) {
-                echo "<script>console.log('Yarı Finalde Yarışan: " . $_POST['winners'][$i] . "');</script>";
-            }
-
-            // Yarı final loserları bulmak için array diff al
-            $losers = array_diff($_POST['winners'], $final_winners);
-
-            // Array diff sonrası dizi farklılığını engellemek için losers listesindeki indexleri 0'dan başlat
+            // Yarı final loserları bul
+            $losers = array_diff($all_teams, $winners);
             $losers = array_values($losers);
 
-            // echo "<pre>";
-            // print_r($losers);
-            // print_r($final_winners);
-            // print_r($_POST['winners']);
-            // echo "</pre>";
-
             // Final eşleşmesini oluştur
-            if (count($final_winners) == 2) {
+            if (count($winners) == 2) {
                 renderTitle("Final Eşleşmesi");
                 echo "<form method='post' action=''>";
 
@@ -392,25 +263,24 @@
 
                 echo "<tr>
                         <td class='font-weight-bold'>Final</td>
-                        <td>{$final_winners[0]}</td>
-                        <td>{$final_winners[1]}</td>
+                        <td>{$winners[0]}</td>
+                        <td>{$winners[1]}</td>
                         <td>
                             <div class='form-check winner-radio'>
-                                <input class='form-check-input' type='radio' name='winner_final' value='{$final_winners[0]}' id='winner_final_red' required>
+                                <input class='form-check-input' type='radio' name='winner_final' value='{$winners[0]}' id='winner_final_red' required>
                                 <label class='form-check-label' for='winner_final_red'>
-                                    {$final_winners[0]}
+                                    {$winners[0]}
                                 </label>
                             </div>
                             <div class='form-check winner-radio'>
-                                <input class='form-check-input' type='radio' name='winner_final' value='{$final_winners[1]}' id='winner_final_blue' required>
+                                <input class='form-check-input' type='radio' name='winner_final' value='{$winners[1]}' id='winner_final_blue' required>
                                 <label class='form-check-label' for='winner_final_blue'>
-                                    {$final_winners[1]}
+                                    {$winners[1]}
                                 </label>
                             </div>
                         </td>
                     </tr>";
 
-                // 3-4 maçlarını yaz
                 echo "<tr>
                         <td class='font-weight-bold'>3-4 Maçı</td>
                         <td>{$losers[0]}</td>
@@ -433,16 +303,14 @@
 
                 echo "</tbody></table>";
 
-                // Finalde ve 3-4 maçında yarışan tüm takımları hidden input olarak ekle
-                foreach ($final_winners as $index => $winner) {
+                foreach ($winners as $winner) {
                     echo "<input type='hidden' name='final_combined[]' value='{$winner}'>";
                 }
 
-                foreach ($losers as $index => $loser) {
+                foreach ($losers as $loser) {
                     echo "<input type='hidden' name='third_combined[]' value='{$loser}'>";
                 }
 
-                // Sonuçları kaydetmek için bir buton ekleyebilirsiniz
                 echo "
                     <div class='btn-group mb-2 mt-0'>
                         <button type='submit' class='btn btn-success' name='show_final_winner'>Sonucu Göster</button>
@@ -454,31 +322,23 @@
         }
 
         if (isset($_POST['show_final_winner'])) {
-            $final_winner = $_POST['winner_final']; // Final maçının kazananı
-            $third_place_winner = $_POST['winner_3_4']; // 3-4 maçının kazananı
-            $final_combined = $_POST['final_combined']; // Finalde yarışan takımlar
-            $third_combined = $_POST['third_combined']; // 3-4 maçında yarışan takımlar
+            $final_winner = $_POST['winner_final'];
+            $third_place_winner = $_POST['winner_3_4'];
+            $final_combined = $_POST['final_combined'];
+            $third_combined = $_POST['third_combined'];
 
-            // final maçının kaybedeni
             $final_loser = array_diff($final_combined, [$final_winner]);
-            $final_loser = array_values($final_loser)[0]; // Indexleri sıfırdan başlat ve ilk elemanı al
+            $final_loser = array_values($final_loser)[0];
 
-            // 3-4 maçının kaybedeni
             $third_place_loser = array_diff($third_combined, [$third_place_winner]);
-            $third_place_loser = array_values($third_place_loser)[0]; // Indexleri sıfırdan başlat ve ilk elemanı al
-
-            // Sonuçları göster
-            renderTitle("Yarışma Sonuçları");
-
-            // line
-            echo "<hr class='my-4 bg-primary'>";
+            $third_place_loser = array_values($third_place_loser)[0];
 
             echo "
                 <div class='text-center'>
                     <div class='mb-5' style='color: gold;'>
                         <span class='' style='font-size: 8rem; line-height: 125%;'>🏆 {$final_winner} 🏆</span>
                         <br/>
-                        <span class='' style='font-size: 4rem; line-height: 90%;'>Şampiyon</span>
+                        <span class='' style='font-size: 4rem; line-height: 90%;'>National Team</span>
                     </div>
 
                     <div class='mb-5' style='color: silver;'>
@@ -491,6 +351,12 @@
                         <span class='' style='font-size: 4rem; line-height: 125%;'>🥉 {$third_place_winner} 🥉</span>
                         <br/>
                         <span class='' style='font-size: 2rem; line-height: 90%;'>Üçüncü</span>
+                    </div>
+
+                    <div class='mb-5' style='color: #8B4513;'>
+                        <span class='' style='font-size: 3rem; line-height: 125%;'>{$third_place_loser}</span>
+                        <br/>
+                        <span class='' style='font-size: 1.5rem; line-height: 90%;'>Dördüncü</span>
                     </div>
                 </div>"
             ;

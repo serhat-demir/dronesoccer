@@ -49,6 +49,7 @@
             <a href="mac-kayitlari.php" class="btn btn-primary btn-lg btn-block py-3 font-weight-bold" target="_blank">Maç Kayıtları</a>
             <a href="grup-siralama.php" class="btn btn-primary btn-lg btn-block py-3 font-weight-bold" target="_blank">Grup Sıralama</a>
             <a href="eslestirme.php" class="btn btn-primary btn-lg btn-block py-3 font-weight-bold" target="_blank">Eleme Maçları (Çeyrek Final)</a>
+            <a href="final-four.php" class="btn btn-primary btn-lg btn-block py-3 font-weight-bold" target="_blank">Final Four</a>
         </div>
     </div>
 </body>

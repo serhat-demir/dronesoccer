@@ -95,6 +95,7 @@
                 <option value="Yarı Final">Yarı Final</option>
                 <option value="3-4 Maçı">3-4 Maçı</option>
                 <option value="Final">Final</option>
+                <option value="Final Four">Final Four</option>
             </select>
         </div>
 

@@ -23,18 +23,6 @@
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/fractional-grid.css">
     <style>
-        .group-container {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .group-column {
-            width: 32%;
-            margin-bottom: 20px;
-        }
-
         .group-column h2 {
             text-align: center;
         }
@@ -52,7 +40,7 @@
         }
 
         table tr {
-            height: 100px; /* satır yüksekliği */
+            height: 100px;
         }
 
         table th {
@@ -68,7 +56,17 @@
         }
 
         table td:nth-child(n+1) {
-            font-size: 1.25rem; /* veya istediğin px değeri */
+            font-size: 1.25rem;
+        }
+
+        .group-row {
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .group-column {
+                margin-bottom: 2rem;
+            }
         }
     </style>
 </head>
@@ -84,130 +82,143 @@
             <img src='logo.svg' alt='Drone Soccer' class='w-25'>
         </div>
     </div>
-    <div class="row">
-        <?php
-        // Grupları al
-        $gruplar = $db->prepare("SELECT * FROM gruplar WHERE kullanici_id = ? ORDER BY grup_adi");
-        $gruplar->execute([$current_user_id]);
-        $gruplar = $gruplar->fetchAll();
+    
+    <?php
+    // Grupları al
+    $gruplar = $db->prepare("SELECT * FROM gruplar WHERE kullanici_id = ? ORDER BY grup_adi");
+    $gruplar->execute([$current_user_id]);
+    $gruplar = $gruplar->fetchAll();
 
-        $takimlar1 = [];
-        $takimlar2 = [];
+    $group_count = count($gruplar);
 
-        foreach ($gruplar as $index => $grup) {
-            if ($index % 2 === 0) {
-                $takimlar1[] = $grup;
-            } else {
-                $takimlar2[] = $grup;
-            }
-        }
+    // Check if group count is valid (only 2 or 4 groups allowed)
+    if ($group_count != 2 && $group_count != 4) {
+        echo "<div class='alert alert-danger text-center mt-5'>";
+        echo "<h4>Hata!</h4>";
+        echo "<p>Bu sayfa sadece 2 veya 4 grup için tasarlanmıştır.</p>";
+        echo "<p>Mevcut grup sayısı: {$group_count}</p>";
+        echo "<p>Lütfen grup sayınızı 2 veya 4 olarak ayarlayın.</p>";
+        echo "</div>";
+        echo "</body></html>";
+        exit;
+    }
 
-        // Tabloları yazdıran fonksiyon
-        function tabloyuYazdir($grup, $db, $sira, $current_user_id) {
-            if ($sira == 1) {
-                echo "<h2>{$grup['grup_adi']}</h2>";
-            } else {
-                echo "<h2 class=\"text-right\">{$grup['grup_adi']}</h2>";
-            }
+    // Tabloları yazdıran fonksiyon
+    function tabloyuYazdir($grup, $db, $current_user_id) {
+        echo "<h2>{$grup['grup_adi']}</h2>";
 
-            $grup_siralama = $db->prepare("
-                SELECT 
-                    t.id AS takim_id,
-                    t.takim_adi,
-                    COUNT(CASE WHEN s.takim1_id = t.id OR s.takim2_id = t.id THEN 1 END) AS oynadigi_toplam_mac_sayisi,
-                    SUM(CASE 
-                        WHEN s.takim1_id = t.id THEN s.takim1_puan
-                        WHEN s.takim2_id = t.id THEN s.takim2_puan
-                        ELSE 0 END
-                    ) AS topladigi_puan,
+        $grup_siralama = $db->prepare("
+            SELECT 
+                t.id AS takim_id,
+                t.takim_adi,
+                COUNT(CASE WHEN s.takim1_id = t.id OR s.takim2_id = t.id THEN 1 END) AS oynadigi_toplam_mac_sayisi,
+                SUM(CASE 
+                    WHEN s.takim1_id = t.id THEN s.takim1_puan
+                    WHEN s.takim2_id = t.id THEN s.takim2_puan
+                    ELSE 0 END
+                ) AS topladigi_puan,
+                SUM(CASE 
+                    WHEN s.takim1_id = t.id THEN s.takim1_gol
+                    WHEN s.takim2_id = t.id THEN s.takim2_gol
+                    ELSE 0 END
+                ) AS attigi_toplam_gol,
+                SUM(CASE 
+                    WHEN s.takim1_id = t.id THEN s.takim2_gol
+                    WHEN s.takim2_id = t.id THEN s.takim1_gol
+                    ELSE 0 END
+                ) AS yedigi_toplam_gol,
+                SUM(CASE 
+                    WHEN s.takim1_id = t.id THEN s.takim1_pen
+                    WHEN s.takim2_id = t.id THEN s.takim2_pen
+                    ELSE 0 END
+                ) AS kazandigi_penaltilar,
+                (
                     SUM(CASE 
                         WHEN s.takim1_id = t.id THEN s.takim1_gol
                         WHEN s.takim2_id = t.id THEN s.takim2_gol
                         ELSE 0 END
-                    ) AS attigi_toplam_gol,
+                    ) - 
                     SUM(CASE 
                         WHEN s.takim1_id = t.id THEN s.takim2_gol
                         WHEN s.takim2_id = t.id THEN s.takim1_gol
                         ELSE 0 END
-                    ) AS yedigi_toplam_gol,
-                    SUM(CASE 
-                        WHEN s.takim1_id = t.id THEN s.takim1_pen
-                        WHEN s.takim2_id = t.id THEN s.takim2_pen
-                        ELSE 0 END
-                    ) AS kazandigi_penaltilar,
-                    (
-                        SUM(CASE 
-                            WHEN s.takim1_id = t.id THEN s.takim1_gol
-                            WHEN s.takim2_id = t.id THEN s.takim2_gol
-                            ELSE 0 END
-                        ) - 
-                        SUM(CASE 
-                            WHEN s.takim1_id = t.id THEN s.takim2_gol
-                            WHEN s.takim2_id = t.id THEN s.takim1_gol
-                            ELSE 0 END
-                        )
-                    ) AS average
-                FROM takimlar t
-                LEFT JOIN scoreboard s 
-                    ON (s.takim1_id = t.id OR s.takim2_id = t.id)
-                    AND s.asama = 'Ön Eleme'
-                    AND s.kullanici_id = ?
-                WHERE t.takim_grup = ? AND t.kullanici_id = ?
-                GROUP BY t.id, t.takim_adi
-                ORDER BY topladigi_puan DESC, average DESC, attigi_toplam_gol DESC
-            ");
-            $grup_siralama->execute([$current_user_id, $grup['id'], $current_user_id]);
-            $grup_siralama = $grup_siralama->fetchAll();
+                    )
+                ) AS average
+            FROM takimlar t
+            LEFT JOIN scoreboard s 
+                ON (s.takim1_id = t.id OR s.takim2_id = t.id)
+                -- AND s.asama = 'Ön Eleme'
+                AND s.kullanici_id = ?
+            WHERE t.takim_grup = ? AND t.kullanici_id = ?
+            GROUP BY t.id, t.takim_adi
+            ORDER BY topladigi_puan DESC, average DESC, attigi_toplam_gol DESC
+        ");
+        $grup_siralama->execute([$current_user_id, $grup['id'], $current_user_id]);
+        $grup_siralama = $grup_siralama->fetchAll();
 
+        echo "
+            <table class='table table-bordered text-center table-striped mb-5'>
+                <tr class='bg-primary text-light'>
+                    <th>Sıralama</th>
+                    <th>Takım Adı</th>
+                    <th>Oynadığı Maç</th>
+                    <th>Attığı Gol</th>
+                    <th>Yediği Gol</th>
+                    <th>Kazandığı Penaltı</th>
+                    <th>Average</th>
+                    <th class=\"bg-blue text-light font-weight-bold\">Puan</th>
+                </tr>
+        ";
+
+        $sira = 1;
+        foreach ($grup_siralama as $takim) {
             echo "
-                <table class='table table-bordered text-center table-striped mb-5'>
-                    <tr class='bg-primary text-light'>
-                        <th>Sıralama</th>
-                        <th>Takım Adı</th>
-                        <th>Oynadığı Maç</th>
-                        <th>Attığı Gol</th>
-                        <th>Yediği Gol</th>
-                        <th>Kazandığı Penaltı</th>
-                        <th>Average</th>
-                        <th class=\"bg-blue text-light font-weight-bold\">Puan</th>
-                    </tr>
+                <tr>
+                    <td class='font-weight-bold'>{$sira}</td>
+                    <td>{$takim['takim_adi']}</td>
+                    <td>{$takim['oynadigi_toplam_mac_sayisi']}</td>
+                    <td>{$takim['attigi_toplam_gol']}</td>
+                    <td>{$takim['yedigi_toplam_gol']}</td>
+                    <td>{$takim['kazandigi_penaltilar']}</td>
+                    <td>{$takim['average']}</td>
+                    <td class=\"bg-blue text-light font-weight-bold\">{$takim['topladigi_puan']}</td>
+                </tr>
             ";
-
-            $sira = 1;
-            foreach ($grup_siralama as $takim) {
-                echo "
-                    <tr>
-                        <td class='font-weight-bold'>{$sira}</td>
-                        <td>{$takim['takim_adi']}</td>
-                        <td>{$takim['oynadigi_toplam_mac_sayisi']}</td>
-                        <td>{$takim['attigi_toplam_gol']}</td>
-                        <td>{$takim['yedigi_toplam_gol']}</td>
-                        <td>{$takim['kazandigi_penaltilar']}</td>
-                        <td>{$takim['average']}</td>
-                        <td class=\"bg-blue text-light font-weight-bold\">{$takim['topladigi_puan']}</td>
-                    </tr>
-                ";
-                $sira++;
-            }
-
-            echo "</table>";
+            $sira++;
         }
 
-        // Sol kolon (1. grup)
-        echo "<div class='col-6'>";
-        foreach ($takimlar1 as $grup1) {
-            tabloyuYazdir($grup1, $db, 1, $current_user_id);
+        echo "</table>";
+    }
+
+    // Modified layout logic for only 2 or 4 groups
+    if ($group_count == 2) {
+        // 2 groups: side by side
+        echo "<div class='row'>";
+        foreach ($gruplar as $grup) {
+            echo "<div class='col-6 group-column'>";
+            tabloyuYazdir($grup, $db, $current_user_id);
+            echo "</div>";
         }
         echo "</div>";
-
-        // Sağ kolon (2. grup)
-        echo "<div class='col-6'>";
-        foreach ($takimlar2 as $grup2) {
-            tabloyuYazdir($grup2, $db, 2, $current_user_id);
+    } else { // $group_count == 4
+        // 4 groups: 2x2 layout
+        for ($i = 0; $i < 4; $i += 2) {
+            echo "<div class='row group-row'>";
+            
+            // Left column
+            echo "<div class='col-6 group-column'>";
+            tabloyuYazdir($gruplar[$i], $db, $current_user_id);
+            echo "</div>";
+            
+            // Right column
+            echo "<div class='col-6 group-column'>";
+            tabloyuYazdir($gruplar[$i + 1], $db, $current_user_id);
+            echo "</div>";
+            
+            echo "</div>";
         }
-        echo "</div>";
-        ?>
-    </div>
+    }
+    ?>
 
     <script src="js/bootstrap.min.js"></script>
     <script src="js/routing.js"></script>
